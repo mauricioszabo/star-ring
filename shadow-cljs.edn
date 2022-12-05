@@ -9,28 +9,16 @@
                          :keep-as-require #{"atom" "electron"}}
 
             :compiler-options {:infer-externs :auto}
-            :exports {:activate generic-lsp.core/activate
-                      :deactivate generic-lsp.core/deactivate
-                      :config generic-lsp.config/config
+            :exports {;; Generic LSP
+                      :generic-lsp-activate generic-lsp.core/activate
+                      :generic-lsp-deactivate generic-lsp.core/deactivate
+                      :generic-lsp-config generic-lsp.config/config
 
-                      :provider
-                      generic-lsp.provider/provider
-
-                      :status-bar-consumer
-                      generic-lsp.status-bar/consumer
-
-                      :complete-provider
-                      generic-lsp.complete/provider
-
-                      :intentions-list
-                      generic-lsp.intentions/list-intentions
-
-                      :intentions-provide
-                      generic-lsp.intentions/provider
-
-                      :datatip-consumer
-                      generic-lsp.datatip/consumer
-
-                      :linter-consumer
-                      generic-lsp.linter/consumer}
-            :output-to "lib/main.js"}}}
+                      :generic-lsp-provider generic-lsp.provider/provider
+                      :generic-lsp-status-bar-consumer generic-lsp.status-bar/consumer
+                      :generic-lsp-complete-provider generic-lsp.complete/provider
+                      :generic-lsp-intentions-list generic-lsp.intentions/list-intentions
+                      :generic-lsp-intentions-provide generic-lsp.intentions/provider
+                      :generic-lsp-datatip-consumer generic-lsp.datatip/consumer
+                      :generic-lsp-linter-consumer generic-lsp.linter/consumer}
+            :output-to "star-ring.js"}}}
