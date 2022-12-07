@@ -57,10 +57,9 @@
                                       (.preventDefault evt)
                                       (.. js/atom
                                           -workspace
-                                          (open file
-                                                #js {:pending true
-                                                     :searchAllPanes true
-                                                     :location "center"})))}
+                                          (open file #js {:pending true
+                                                          :searchAllPanes true
+                                                          :location "center"})))}
             [:span.badge.badge-small.icon-info " " (count keys) " "] " " file]]
           (when curr-file?
             (->> keys

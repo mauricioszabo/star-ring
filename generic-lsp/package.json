@@ -5,7 +5,8 @@
   "description": "A generic LSP package for Atom/Pulsar",
   "keywords": [],
   "activationCommands": {
-    "atom-workspace": "generic-lsp:start-LSP-server"
+    "atom-workspace": "generic-lsp:start-LSP-server",
+    "atom-text-editor": "generic-lsp:open-config-for-current-language"
   },
   "repository": "https://gitlab.com/clj-editors/star-ring",
   "providedServices": {
