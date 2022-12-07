@@ -53,11 +53,20 @@
         [:ul.list-tree
          [:li.list-nested-item {:class (if curr-file? [] [:collapsed])}
           [:div.list-item
-           [:a {:href "#"} [:span.badge.badge-small.icon-info " " (count keys) " "] " " file]]
-          (->> keys
-               (sort-by (juxt :severity :range))
-               (map messages-ui)
-               (into [:ul.list-tree {:style {:margin-left "2em"}}]))]])]]))
+           [:a {:href "#" :on-click (fn [evt]
+                                      (.preventDefault evt)
+                                      (.. js/atom
+                                          -workspace
+                                          (open file
+                                                #js {:pending true
+                                                     :searchAllPanes true
+                                                     :location "center"})))}
+            [:span.badge.badge-small.icon-info " " (count keys) " "] " " file]]
+          (when curr-file?
+            (->> keys
+                 (sort-by (juxt :severity :range))
+                 (map messages-ui)
+                 (into [:ul.list-tree {:style {:margin-left "2em"}}])))]])]]))
 
 (defn- render [added removed _messages]
   (doseq [msg added] (re/dispatch [:star-linter/add-message msg]))
