@@ -43,7 +43,6 @@
 (defn main-window []
   (let [messages @(re/subscribe [:star-linter/messages])
         curr-path @(re/subscribe [:star-linter/current-path])]
-    (prn :C curr-path)
     [:ul.list-tree.has-collapsable-children {:style {:height "20em" :overflow "auto"}}
      [:li.list-nested-item
       [:h2 "Star Linter"]
