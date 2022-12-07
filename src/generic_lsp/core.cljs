@@ -1,9 +1,7 @@
 (ns generic-lsp.core
   (:require [generic-lsp.commands :as cmds]
-            [generic-lsp.atom :refer [subscriptions open-paths]]
+            [common.atom :refer [subscriptions open-paths atom-state]]
             ["atom" :refer [CompositeDisposable]]))
-
-(defonce atom-state (atom nil))
 
 (defn- info! [message]
   (.. js/atom -notifications (addInfo message)))

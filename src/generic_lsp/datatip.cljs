@@ -5,7 +5,7 @@
 
 (defonce service (atom nil))
 
-(defn- datatip [^js editor position]
+(defn- datatip [^js editor _position]
   (p/let [results (cmds/hover! editor)]
     (when results
       (clj->js {:markedStrings (map (fn [{:keys [type value]}]

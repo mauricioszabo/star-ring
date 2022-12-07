@@ -1,7 +1,7 @@
 (ns generic-lsp.commands
   (:require [promesa.core :as p]
             [generic-lsp.rpc :as rpc]
-            [generic-lsp.atom :as atom]
+            [common.atom :as atom]
             [generic-lsp.linter :as linter]
             ["atom" :refer [TextBuffer Range]]
             ["fs" :as fs]
@@ -25,7 +25,7 @@
             #js [(:line end) (:character end)])))
 
 (defmethod callback-command "workspace/configuration" [{:keys [id params]} lang]
-  (let [result (map #(do nil) (:items params))]
+  (let [result (map (constantly nil) (:items params))]
     (respond! lang {:id id :result result})))
 
 (defmethod callback-command "textDocument/publishDiagnostics" [{:keys [params]} _lang]
@@ -163,7 +163,7 @@
   (when-let [server (get-in @loaded-servers [language :server])]
     (rpc/notify! server command params)))
 
-(def ^:private sync-support [:none :full :incremental])
+; (def ^:private sync-support [:none :full :incremental])
 (defonce ^:private uri-versions (atom {}))
 
 (defn open-document! [^js editor]
@@ -321,11 +321,11 @@
                                   "\n```")}))
 
 (defn hover! [^js editor]
-  (let [lang (.. editor getGrammar -name)
-        position (.getSelectedBufferRange editor)
-        tab-size (.. js/atom -config (get "editor.tabLength"))
-        spaces? (not= "hard" (.. js/atom -config (get "editor.tabType")))]
-    (if (have-capability? lang :documentRangeFormattingProvider)
+  (let [lang (.. editor getGrammar -name)]
+        ; position (.getSelectedBufferRange editor)
+        ; tab-size (.. js/atom -config (get "editor.tabLength"))
+        ; spaces? (not= "hard" (.. js/atom -config (get "editor.tabType")))]
+    (when (have-capability? lang :documentRangeFormattingProvider)
       (p/let [res (send-command! lang "textDocument/hover"
                                  (position-from-editor editor))
               contents (-> res :result :contents)]

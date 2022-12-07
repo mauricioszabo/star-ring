@@ -5,3 +5,4 @@ lib
 .shadow-cljs
 .clj-kondo
 .lsp
+star-ring

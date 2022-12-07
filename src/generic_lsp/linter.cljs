@@ -1,6 +1,6 @@
 (ns generic-lsp.linter
   (:require ["url" :as url]
-            [generic-lsp.atom :refer [subscriptions]]))
+            [common.atom :refer [subscriptions]]))
 
 (defonce service (atom nil))
 (defonce linter (atom nil))

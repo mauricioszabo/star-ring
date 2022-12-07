@@ -1,7 +1,8 @@
-(ns generic-lsp.atom
+(ns common.atom
   (:require ["atom" :refer [CompositeDisposable]]
             ["url" :as url]))
 
+(defonce atom-state (atom nil))
 (defonce subscriptions (atom (CompositeDisposable.)))
 
 (defn info! [message]

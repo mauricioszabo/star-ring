@@ -3,6 +3,8 @@
   "description": "A collection of packages for Pulsar",
   "keywords": [],
   "devDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "shadow-cljs": "^2.20.1"
   }
 }
