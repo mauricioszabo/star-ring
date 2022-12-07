@@ -4,7 +4,8 @@
             [re-frame.core :as re]))
 
 (defn- text-editor-observer [^js text-editor]
-  (re/dispatch [:star-linter/change-editor (.getPath text-editor)]))
+  (when text-editor
+    (re/dispatch [:star-linter/change-editor (.getPath text-editor)])))
 
 (defn ^:dev/after-load activate [state]
   (reset! atom-state state)

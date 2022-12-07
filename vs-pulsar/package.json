@@ -7,7 +7,7 @@
   "activationCommands": {
     "atom-workspace": "generic-lsp:start-LSP-server"
   },
-  "repository": "https://github.com/mauricioszabo/generic-lsp",
+  "repository": "https://gitlab.com/clj-editors/star-ring",
   "providedServices": {
     "lsp.command": {
       "versions": {
