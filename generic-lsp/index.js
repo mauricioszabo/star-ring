@@ -1,12 +1,12 @@
 const ring = require('../star-ring')
 
-module.exports.activate = ring.generic-lsp-activate
-module.exports.deactivate = ring.generic-lsp-deactivate
-module.exports.config = ring.generic-lsp-config
-module.exports.provider = ring.generic-lsp-provider
-module.exports.status-bar-consumer = ring.generic-lsp-status-bar-consumer
-module.exports.complete-provider = ring.generic-lsp-complete-provider
-module.exports.intentions-list = ring.generic-lsp-intentions-list
-module.exports.intentions-provide = ring.generic-lsp-intentions-provide
-module.exports.datatip-consumer = ring.generic-lsp-datatip-consumer
-module.exports.linter-consumer = ring.generic-lsp-linter-consumer
+module.exports.activate = ring.generic_lsp_activate
+module.exports.deactivate = ring.generic_lsp_deactivate
+module.exports.config = ring.generic_lsp_config
+module.exports.provider = ring.generic_lsp_provider
+module.exports.status_bar_consumer = ring.generic_lsp_status_bar_consumer
+module.exports.complete_provider = ring.generic_lsp_complete_provider
+module.exports.intentions_list = ring.generic_lsp_intentions_list
+module.exports.intentions_provide = ring.generic_lsp_intentions_provide
+module.exports.datatip_consumer = ring.generic_lsp_datatip_consumer
+module.exports.linter_consumer = ring.generic_lsp_linter_consumer
