@@ -1,7 +1,9 @@
 (ns star-linter.core
   (:require [common.atom :refer [subscriptions atom-state]]
             [reagent.dom :as r-dom]
-            [re-frame.core :as re]))
+            [re-frame.core :as re]
+            ["react" :as react]
+            [promesa.core :as p]))
 
 (defn- text-editor-observer [^js text-editor]
   (when text-editor
@@ -43,7 +45,15 @@
 
 (defn main-window []
   (let [messages @(re/subscribe [:star-linter/messages])
-        curr-path @(re/subscribe [:star-linter/current-path])]
+        curr-path @(re/subscribe [:star-linter/current-path])
+        changed-editor? @(re/subscribe [:star-linter/changed-path?])
+        ref (react/useRef nil)]
+    (when changed-editor?
+      (p/do!
+       (p/delay 50)
+       (when-let [elem (.-current ref)]
+         (.scrollIntoView elem))))
+
     [:ul.list-tree.has-collapsable-children {:style {:height "20em" :overflow "auto"}}
      [:li.list-nested-item
       [:h2 "Star Linter"]
@@ -51,7 +61,9 @@
             :when (seq keys)
             :let [curr-file? (= file curr-path)]]
         [:ul.list-tree
-         [:li.list-nested-item {:class (if curr-file? [] [:collapsed])}
+         [:li.list-nested-item (if curr-file?
+                                 {:ref ref}
+                                 {:class :collapsed})
           [:div.list-item
            [:a {:href "#" :on-click (fn [evt]
                                       (.preventDefault evt)
@@ -87,29 +99,34 @@
         range (.. message -location -position)
         start (.-start range)
         end (.-end range)]
-    (assoc-in db [:star-linter/messages location (.-key message)]
-               {:file location
-                :linter (.-linterName message)
-                :range [[(.-row start) (.-column start)]
-                        [(.-row end) (.-column end)]]
-                :severity (.-severity message)
-                :excerpt (.-excerpt message)
-                :description (.-description message)})))
+    (-> db
+        (assoc-in [:star-linter/messages location (.-key message)]
+                  {:file location
+                   :linter (.-linterName message)
+                   :range [[(.-row start) (.-column start)]
+                           [(.-row end) (.-column end)]]
+                   :severity (.-severity message)
+                   :excerpt (.-excerpt message)
+                   :description (.-description message)})
+        (assoc :star-linter/changed-path? false))))
 
 (defn- remove-message [db [_ ^js message]]
   (let [location (.. message -location -file)]
-    (update-in db [:star-linter/messages location] dissoc (.-key message))))
+    (-> db
+        (update-in [:star-linter/messages location] dissoc (.-key message))
+        (assoc :star-linter/changed-path? false))))
 
 (defn- change-editor [db [_ path]]
-  (assoc db :star-linter/current-path path))
+  (assoc db :star-linter/current-path path :star-linter/changed-path? true))
 
 (defn- ^:dev/after-load register-events! []
   (re/reg-sub :star-linter/messages messages)
   (re/reg-sub :star-linter/current-path #(:star-linter/current-path %))
+  (re/reg-sub :star-linter/changed-path? #(:star-linter/changed-path? %))
   (re/reg-event-db :star-linter/change-editor change-editor)
   (re/reg-event-db :star-linter/add-message add-message)
   (re/reg-event-db :star-linter/remove-message remove-message)
-  (r-dom/render [main-window] (.-item pane)))
+  (r-dom/render [:f> main-window] (.-item pane)))
 
 (defn ui []
   (register-events!)
