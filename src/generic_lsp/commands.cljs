@@ -108,7 +108,7 @@
                                :workspaceFolders workpace-dirs})]
 
     (rpc/notify! server "initialized" {})
-    (rpc/notify! server "workspace/didChangeConfiguration" {})
+    (rpc/notify! server "workspace/didChangeConfiguration" {:settings {}})
 
     (swap! loaded-servers assoc language {:server server
                                           :capabilities (-> init-res :result :capabilities)})
