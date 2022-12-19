@@ -1,4 +1,4 @@
-const ring = require('../star-ring')
+const ring = require('../star-ring/common')
 
 module.exports.activate = ring.generic_lsp_activate
 module.exports.deactivate = ring.generic_lsp_deactivate

@@ -63,7 +63,7 @@
   (.add @subscriptions (.. js/atom -commands
                            (add "atom-text-editor"
                                 "generic-lsp:start-LSP-server"
-                                #(cmds/start-lsp-server! @open-paths))))
+                                #(cmds/start! @open-paths))))
   (.add @subscriptions (.. js/atom -commands
                            (add "atom-text-editor"
                                 "generic-lsp:stop-LSP-server"
