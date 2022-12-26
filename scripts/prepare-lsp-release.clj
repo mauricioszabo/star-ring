@@ -56,6 +56,7 @@
 (defn main! []
   ; (when (last-commit-changed-lsp?)
     (shell "git" "checkout" "-b" "RELEASE-DELETE-THIS")
+    (shell "git" "tag" (str "generic-lsp-v" @version "-source"))
     (fix-shadow-cljs!)
     (fix-packages-files!)
     (shell "npx" "shadow-cljs" "release" "package")
