@@ -38,7 +38,7 @@
 
 (defn- delete-unrelated-dirs [dirs]
   (doseq [dir dirs
-          :when (and (not= dir ".dir")
+          :when (and (not= dir ".git")
                      (not= dir "star-ring"))]
     (fs/delete-tree dir)))
 
@@ -54,7 +54,7 @@
   (fs/copy "generic-lsp/package.json" "package.json" {:replace-existing true}))
 
 (defn main! []
-  (when (last-commit-changed-lsp?)
+  ; (when (last-commit-changed-lsp?)
     (shell "git" "checkout" "-b" "RELEASE-DELETE-THIS")
     (fix-shadow-cljs!)
     (fix-packages-files!)
@@ -65,7 +65,11 @@
     (shell "git" "add" ".")
     (shell "git" "add" "star-ring/common.js" "-f")
     (shell "git" "commit" "-m" (str "Compiled release for generic-lsp@" @version))
-    (shell "git" "tag" "-v" (str "generic-lsp-v" @version))))
+    (shell "git" "tag" (str "generic-lsp-v" @version))
+    (shell "git" "checkout" "-")
+    (shell "git" "branch" "-D" "RELEASE-DELETE-THIS")
+    (shell "git" "push" "--tags")
+    (println "Successfully tagged" (str "generic-lsp-v" @version)))
 
 (when (= *file* (System/getProperty "babashka.file"))
   (main!))
