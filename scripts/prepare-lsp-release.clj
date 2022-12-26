@@ -65,4 +65,4 @@
     (shell "git" "add" "-u" ".")
     (shell "git" "add" ".")
     (shell "git" "commit" "-m" (str "Compiled release for generic-lsp@" @version))
-    (shell "git" "tag" "-v")))
+    (shell "git" "tag" "-v" (str "generic-lsp-v" @version))))
