@@ -48,10 +48,10 @@
        (map #(-> % fs/normalize str))))
 
 (defn- copy-files! []
-  (fs/copy "generic-lsp/index.js" "index.js")
-  (fs/copy "generic-lsp/README.md" "README.md")
-  (fs/copy "generic-lsp/CHANGELOG.md" "CHANGELOG.md")
-  (fs/copy "generic-lsp/package.json" "package.json"))
+  (fs/copy "generic-lsp/index.js" "index.js" {:replace-existing true})
+  (fs/copy "generic-lsp/README.md" "README.md" {:replace-existing true})
+  (fs/copy "generic-lsp/CHANGELOG.md" "CHANGELOG.md" {:replace-existing true})
+  (fs/copy "generic-lsp/package.json" "package.json" {:replace-existing true}))
 
 (defn main! []
   (when (last-commit-changed-lsp?)
@@ -63,6 +63,7 @@
     (delete-unrelated-dirs (find-all-dirs))
     (shell "git" "add" "-u" ".")
     (shell "git" "add" ".")
+    (shell "git" "add" "star-ring/common.js" "-f")
     (shell "git" "commit" "-m" (str "Compiled release for generic-lsp@" @version))
     (shell "git" "tag" "-v" (str "generic-lsp-v" @version))))
 
