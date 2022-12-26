@@ -32,8 +32,7 @@
         package (-> "generic-lsp/package.json"
                     slurp
                     (str/replace-first #"version\":\s*?\"(.*?)\""
-                                       (str "version\": \"" @version "\""))
-                    println)]
+                                       (str "version\": \"" @version "\"")))]
     (spit "generic-lsp/index.js" index)
     (spit "generic-lsp/package.json" package)))
 
@@ -66,3 +65,6 @@
     (shell "git" "add" ".")
     (shell "git" "commit" "-m" (str "Compiled release for generic-lsp@" @version))
     (shell "git" "tag" "-v" (str "generic-lsp-v" @version))))
+
+(when (= *file* (System/getProperty "babashka.file"))
+  (main!))
