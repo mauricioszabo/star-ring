@@ -108,7 +108,7 @@
                                :workspaceFolders workpace-dirs})]
 
     (rpc/notify! server "initialized" {})
-    (rpc/notify! server "workspace/didChangeConfiguration" {})
+    (rpc/notify! server "workspace/didChangeConfiguration" {:settings {}})
 
     (swap! loaded-servers assoc language {:server server
                                           :capabilities (-> init-res :result :capabilities)})
@@ -126,28 +126,31 @@
       (aget language)
       (js->clj :keywordize-keys true)))
 
-(defn start-lsp-server!
-  ([open-editors] (start-lsp-server! open-editors (curr-editor-lang)))
-  ([open-editors language]
-   (let [params {:on-unknown-command #(callback-command % language)
-                 :on-close #(do
-                              (linter/clear-messages! language)
-                              (swap! loaded-servers dissoc language)
-                              (atom/info! (str "Disconnected server for " language)))}
-         server (get-server language)
-         connection (when-not (empty? (:command server))
-                      (rpc/spawn-server! (:command server)
-                                         (assoc params :args (:args server []))))]
-     (if connection
-       (-> connection
-           (p/then (fn [connection]
-                     (init-lsp language connection open-editors)
-                     (atom/info! (str "Connected server for " language))))
-           (p/catch (fn [error]
-                      (atom/error! (str "Could NOT connect a server for " language)
-                                   (.-message error)))))
-       (atom/error! (str "Don't know how to run a LSP server for " language))))))
+(defn- start-lsp-server! [open-editors language]
+  (let [params {:on-unknown-command #(callback-command % language)
+                :on-close #(do
+                             (linter/clear-messages! language)
+                             (swap! loaded-servers dissoc language)
+                             (atom/info! (str "Disconnected server for " language)))}
+        server (get-server language)
+        connection (when-not (empty? (:command server))
+                     (rpc/spawn-server! (:command server)
+                                        (assoc params :args (:args server []))))]
+    (if connection
+      (-> connection
+          (p/then (fn [connection]
+                    (init-lsp language connection open-editors)
+                    (atom/info! (str "Connected server for " language))))
+          (p/catch (fn [error]
+                     (atom/error! (str "Could NOT connect a server for " language)
+                                  (.-message error)))))
+      (atom/error! (str "Don't know how to run a LSP server for " language)))))
 
+(defn start! [open-editors]
+  (let [language (curr-editor-lang)]
+    (if (get-in @loaded-servers [language :server])
+      (atom/info! (str "There's already a LSP server running for " language))
+      (start-lsp-server! open-editors language))))
 
 (defn stop-lsp-server!
   ([] (stop-lsp-server! (curr-editor-lang)))

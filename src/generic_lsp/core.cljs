@@ -1,6 +1,7 @@
 (ns generic-lsp.core
   (:require [generic-lsp.commands :as cmds]
             [common.atom :refer [subscriptions open-paths atom-state]]
+            [promesa.core :as p]
             ["atom" :refer [CompositeDisposable]]))
 
 (defn- info! [message]
@@ -45,12 +46,24 @@
           :when (-> change .-action (= "renamed"))]
     (renamed-file change)))
 
+(defn- open-config! []
+  (let [editor (.. js/atom -workspace getActiveTextEditor)
+        grammar (some-> editor .getGrammar .-name)]
+    (when grammar
+      (p/let [page (.. js/atom -workspace (open "atom://config/packages/generic-lsp"))
+              view (.. js/atom -views (getView page))
+              headers (.querySelectorAll view "h3")
+              found (->> headers (filter #(-> % .-innerText (= grammar))) first)]
+        (when found
+          (.scrollIntoView found)
+          (.click found))))))
+
 (defn activate [state]
   (reset! atom-state state)
   (.add @subscriptions (.. js/atom -commands
                            (add "atom-text-editor"
                                 "generic-lsp:start-LSP-server"
-                                #(cmds/start-lsp-server! @open-paths))))
+                                #(cmds/start! @open-paths))))
   (.add @subscriptions (.. js/atom -commands
                            (add "atom-text-editor"
                                 "generic-lsp:stop-LSP-server"
@@ -67,6 +80,10 @@
   (.add @subscriptions (.. js/atom -commands
                            (add "atom-text-editor" "generic-lsp:format-document"
                                 #(cmds/format-doc!))))
+  (.add @subscriptions (.. js/atom -commands
+                           (add "atom-text-editor"
+                                "generic-lsp:open-config-for-current-language"
+                                #(open-config!))))
 
   (.add @subscriptions
         (.. js/atom -project (onDidChangeFiles make-changes)))
