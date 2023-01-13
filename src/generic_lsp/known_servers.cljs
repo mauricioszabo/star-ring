@@ -1,5 +1,7 @@
 (ns generic-lsp.known-servers)
 
+(def js-ts-server {:args ["--stdio"]
+                   :binary "typescript-language-server"})
 (def servers
   {"Clojure" {:args []
               :binary "clojure-lsp"}
@@ -7,12 +9,10 @@
           :binary "clangd"}
    "C" {:args []
         :binary "clangd"}
-   "JavaScript" {:args ["--stdio"]
-                 :binary "typescript-language-server"}
-   "TypeScript" {:args ["--stdio"]
-                 :binary "typescript-language-server"}
-   "TypeScriptReact" {:args ["--stdio"]
-                      :binary "typescript-language-server"}
+   "JavaScript" js-ts-server
+   "Babel ES6 JavaScript" js-ts-server
+   "TypeScript" js-ts-server
+   "TypeScriptReact" js-ts-server
    "Ruby" {:args ["exec" "solargraph" "stdio"]
            :binary "bundle"}
    "Java" {:binary "jdtls"
