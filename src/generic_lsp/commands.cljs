@@ -3,6 +3,7 @@
             [generic-lsp.rpc :as rpc]
             [common.atom :as atom]
             [generic-lsp.linter :as linter]
+            [generic-lsp.known-servers :as known]
             ["atom" :refer [TextBuffer Range]]
             ["fs" :as fs]
             ["url" :as url]
@@ -119,12 +120,20 @@
 
 (defn- curr-editor-lang [] (.. js/atom -workspace getActiveTextEditor getGrammar -name))
 
+(defn- adapt-know-server [language]
+  (let [server (get known/servers language {:binary "" :args []})]
+    {:command (:binary server)
+     :args (:args server)}))
+
 (defn- get-server [language]
-  (-> js/atom
-      .-config
-      (.get "generic-lsp")
-      (aget language)
-      (js->clj :keywordize-keys true)))
+  (let [config (-> js/atom
+                   .-config
+                   (.get "generic-lsp")
+                   (aget language)
+                   (js->clj :keywordize-keys true))]
+    (if (-> config :command empty?)
+      (adapt-know-server language)
+      config)))
 
 (defn- start-lsp-server! [open-editors language]
   (let [params {:on-unknown-command #(callback-command % language)
