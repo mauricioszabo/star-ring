@@ -5,14 +5,41 @@
             ["react" :as react]
             [promesa.core :as p]))
 
+(defonce ^:private ui-pair
+  (do
+    (deftype ^js UiClass []
+      Object
+      (getTitle [_] "Star Linter")
+      (destroy [this]
+        (-> (filter #(.. ^js % getItems (includes this))
+                    (.. js/atom -workspace getPanes))
+            first
+            (some-> (.removeItem this)))))
+    [UiClass  (UiClass.)]))
+(def ^:private Ui (first ui-pair))
+(def ^:private ui (second ui-pair))
+
+(defn open-linter []
+  (.. js/atom
+      -workspace
+      (open "pulsar://start-linter" #js {:location "bottom"
+                                         :searchAllPanes true
+                                         :activatePane true
+                                         :activateItem true})))
+
 (defn- text-editor-observer [^js text-editor]
   (when text-editor
     (re/dispatch [:star-linter/change-editor (.getPath text-editor)])))
 
 (defn ^:dev/after-load activate [state]
   (reset! atom-state state)
+  ; (open-linter)
   (.add @subscriptions
-        (.. js/atom -workspace (observeActiveTextEditor #(text-editor-observer %)))))
+        (.. js/atom -workspace (observeActiveTextEditor #(text-editor-observer %))))
+  (.add @subscriptions
+        (.. js/atom -commands (add "atom-workspace"
+                                "star-linter:show-interface"
+                                #(open-linter)))))
 
 (defn deactivate []
   (.dispose ^js @subscriptions))
@@ -54,43 +81,55 @@
        (when-let [elem (.-current ref)]
          (.scrollIntoView elem))))
 
-    [:ul.list-tree.has-collapsable-children {:style {:height "20em" :overflow "auto"}}
-     [:li.list-nested-item
-      [:h2 "Star Linter"]
-      (for [[file keys] messages
-            :when (seq keys)
-            :let [curr-file? (= file curr-path)]]
-        [:ul.list-tree
-         [:li.list-nested-item (if curr-file?
-                                 {:ref ref}
-                                 {:class :collapsed})
-          [:div.list-item
-           [:a {:href "#" :on-click (fn [evt]
-                                      (.preventDefault evt)
-                                      (.. js/atom
-                                          -workspace
-                                          (open file #js {:pending true
-                                                          :searchAllPanes true
-                                                          :location "center"})))}
-            [:span.badge.badge-small.icon-info " " (count keys) " "] " " file]]
-          (when curr-file?
-            (->> keys
-                 (sort-by (juxt :severity :range))
-                 (map messages-ui)
-                 (into [:ul.list-tree {:style {:margin-left "2em"}}])))]])]]))
+    [:div {:class "native-key-bindings star-linter ui"
+           :style {:height "100%" :overflow "auto"}}
+     [:h3 "Star Linter"]
+     [:ul.list-tree.has-collapsable-children
+      [:li.list-nested-item
+       (for [[file keys] messages
+             :when (seq keys)
+             :let [curr-file? (= file curr-path)]]
+         [:ul.list-tree
+          [:li.list-nested-item (if curr-file?
+                                  {:ref ref}
+                                  {:class :collapsed})
+           [:div.list-item
+            [:a {:href "#" :on-click (fn [evt]
+                                       (.preventDefault evt)
+                                       (.. js/atom
+                                           -workspace
+                                           (open file #js {:pending true
+                                                           :searchAllPanes true
+                                                           :location "center"})))}
+             [:span.badge.badge-small.icon-info " " (count keys) " "] " " file]]
+           (when curr-file?
+             (->> keys
+                  (sort-by (juxt :severity :range))
+                  (map messages-ui)
+                  (into [:ul.list-tree {:style {:margin-left "2em"}}])))]])]]]))
+
+(defonce div (js/document.createElement "div"))
+(defn register-ui! [^js subs]
+  (r-dom/render [:f> main-window] div)
+  (.add subs
+        (.. js/atom -workspace
+            (addOpener (fn [uri] (when (= uri "pulsar://start-linter") ui)))))
+  (.add subs (.. js/atom -views (addViewProvider Ui (constantly div)))))
 
 (defn- render [added removed _messages]
+  (prn :A added)
+  (prn :R removed)
   (doseq [msg added] (re/dispatch [:star-linter/add-message msg]))
   (doseq [msg removed] (re/dispatch [:star-linter/remove-message msg])))
 
 (defn- dispose [])
 
-(defn- create-pane! []
-  (let [div (js/document.createElement "div")]
-    (.. js/atom -workspace (addBottomPanel #js {:item div}))))
-
-(defonce pane (create-pane!))
-
+; (defn- create-pane! []
+;   (let [div (js/document.createElement "div")]
+;     (.. div -classList (add "star-linter" "ui"))
+;     (.. js/atom -workspace (addBottomPanel #js {:item div}))))
+;
+; (defonce pane (create-pane!))
 (defn- messages [db]
   (:star-linter/messages db {}))
 
@@ -125,15 +164,21 @@
   (re/reg-sub :star-linter/changed-path? #(:star-linter/changed-path? %))
   (re/reg-event-db :star-linter/change-editor change-editor)
   (re/reg-event-db :star-linter/add-message add-message)
-  (re/reg-event-db :star-linter/remove-message remove-message)
-  (r-dom/render [:f> main-window] (.-item pane)))
+  (re/reg-event-db :star-linter/remove-message remove-message))
+  ; (r-dom/render [:f> main-window] (.-item pane)))
 
-(defn ui []
-  (register-events!)
+(defonce registered
+  (do
+    (register-events!)
+    (register-ui! @subscriptions)))
+
+(defn linter-ui []
   #js {:name "Star Linter"
        :didBeginLinting (fn [linter path] (begin-linting linter path))
        :didFinishLinting (fn [linter path] (finish-linting linter path))
-       :render (fn [^js input] (render (.-added input)
-                                       (.-removed input)
-                                       (.-messages input)))
+       :render (fn [^js input]
+                 (prn :RENDERa)
+                 (render (.-added input)
+                         (.-removed input)
+                         (.-messages input)))
        :dispose #(dispose)})

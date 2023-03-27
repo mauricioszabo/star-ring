@@ -25,7 +25,7 @@
 
                       :star-linter-activate star-linter.core/activate
                       :star-linter-deactivate star-linter.core/deactivate
-                      :star-linter-ui star-linter.core/ui
+                      :star-linter-ui star-linter.core/linter-ui
 
                       :vs-activate vs-pulsar.core/activate
                       :vs-deactivate vs-pulsar.core/deactivate}
