@@ -10,50 +10,42 @@
 (defn deactivate []
   (.dispose ^js @subscriptions))
 
-(defn- suggest-code! []
-  (if-let [text (not-empty (.. js/atom -workspace getActiveTextEditor getSelectedText))]
-    (p/let [^js editor (.. js/atom -workspace getActiveTextEditor)
-            selection (.getSelectedBufferRange editor)
-            token (.. js/atom -config (get "minivac.gpt-token"))
-            ^js f (js/fetch  "https://api.openai.com/v1/completions"
-                             (clj->js
-                              {:method "POST"
-                               :headers {"Authorization" (str "Bearer " token)
-                                         "Content-Type" "application/json"}
-                               :body (js/JSON.stringify
-                                      #js {:model "text-davinci-003"
-                                           :prompt text
-                                           :max_tokens 2048
-                                           :temperature 0.1})}))
-            ^js json (.json f)
-            [choice] (.-choices json)
-            suggestion (.-text choice)]
-      (.setTextInBufferRange editor selection suggestion))
-    (atom/error! "Select a text before prompting")))
-
-(defn- make-edit! [^js editor selection instruction text]
-  (p/let [token (.. js/atom -config (get "minivac.gpt-token"))
-          ^js f (js/fetch  "https://api.openai.com/v1/edits"
+(defn- make-request-and-replace-editor! [url body]
+  (p/let [^js editor (.. js/atom -workspace getActiveTextEditor)
+          selection (.getSelectedBufferRange editor)
+          token (.. js/atom -config (get "minivac.gpt-token"))
+          ^js f (js/fetch  (str "https://api.openai.com/" url)
                            (clj->js
                             {:method "POST"
                              :headers {"Authorization" (str "Bearer " token)
                                        "Content-Type" "application/json"}
-                             :body (js/JSON.stringify
-                                    #js {:model "code-davinci-edit-001"
-                                         :input text
-                                         :instruction instruction
-                                         :temperature 0.1})}))
+                             :body (-> body clj->js js/JSON.stringify)}))
           ^js json (.json f)
           [choice] (.-choices json)
           suggestion (.-text choice)]
     (.setTextInBufferRange editor selection suggestion)))
+
+(defn- suggest-code! []
+  (if-let [text (not-empty (.. js/atom -workspace getActiveTextEditor getSelectedText))]
+    (make-request-and-replace-editor! "v1/completions"
+                                      {:model "text-davinci-003"
+                                       :prompt text
+                                       :max_tokens 2048
+                                       :temperature 0.1})
+    (atom/error! "Select a text before prompting")))
 
 (defn- edit-code! []
   (if-let [text (not-empty (.. js/atom -workspace getActiveTextEditor getSelectedText))]
     (p/let [^js editor (.. js/atom -workspace getActiveTextEditor)
             selection (.getSelectedBufferRange editor)
             instruction (atom/prompt! "How do you want your text to be changed?")]
-      (when instruction (make-edit! editor selection instruction text)))
+      (when instruction
+        (make-request-and-replace-editor! "v1/edits"
+                                          {:model "code-davinci-edit-001"
+                                           :input text
+                                           :instruction instruction
+                                           :temperature 0.1})))
+        ; (make-edit! editor selection instruction text)))
     (atom/error! "Select a text to edit before prompting")))
 
 (defn ^:dev/after-load activate [state]
@@ -66,5 +58,3 @@
         (.. js/atom -commands (add "atom-text-editor"
                                 "minivac:change-selected-code"
                                 #(edit-code!)))))
-
-; Make a fibonacci sequence in Clojure
