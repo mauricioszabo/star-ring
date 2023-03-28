@@ -1,9 +1,6 @@
 (ns minivac.core
   (:require [common.atom :refer [subscriptions atom-state] :as atom]
-            ; [reagent.dom :as r-dom]
-            ; [re-frame.core :as re]
             [promesa.core :as p]))
-            ; ["openai" :refer [Configuration OpenAIApi]]))
 
 (def config
   (clj->js {:gpt-token {:title "GPT Token"
