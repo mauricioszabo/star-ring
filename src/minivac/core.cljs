@@ -21,7 +21,7 @@
                                :headers {"Authorization" (str "Bearer " token)
                                          "Content-Type" "application/json"}
                                :body (js/JSON.stringify
-                                      #js {:model "code-davinci-001"
+                                      #js {:model "text-davinci-003"
                                            :prompt text
                                            :max_tokens 2048
                                            :temperature 0.1})}))
