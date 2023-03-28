@@ -27,6 +27,10 @@
                       :star-linter-deactivate star-linter.core/deactivate
                       :star-linter-ui star-linter.core/linter-ui
 
+                      :minivac-activate minivac.core/activate
+                      :minivac-deactivate minivac.core/deactivate
+                      :minivac-config minivac.core/config
+
                       :vs-activate vs-pulsar.core/activate
                       :vs-deactivate vs-pulsar.core/deactivate}
             :output-to "star-ring/common.js"
