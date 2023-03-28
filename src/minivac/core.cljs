@@ -7,14 +7,6 @@
                         :description "A token from GPT - find it at https://platform.openai.com/account/api-keys"
                         :type "string"}}))
 
-  ; ; (open-linter)
-  ; (.add @subscriptions
-  ;       (.. js/atom -workspace (observeActiveTextEditor #(text-editor-observer %))))
-  ; (.add @subscriptions
-  ;       (.. js/atom -commands (add "atom-workspace"
-  ;                               "star-linter:show-interface"
-  ;                               #(open-linter)))))
-
 (defn deactivate []
   (.dispose ^js @subscriptions))
 
@@ -29,9 +21,9 @@
                                :headers {"Authorization" (str "Bearer " token)
                                          "Content-Type" "application/json"}
                                :body (js/JSON.stringify
-                                      #js {:model "text-davinci-003"
+                                      #js {:model "code-davinci-001"
                                            :prompt text
-                                           :max_tokens 100
+                                           :max_tokens 2048
                                            :temperature 0.1})}))
             ^js json (.json f)
             [choice] (.-choices json)
@@ -47,12 +39,11 @@
                              :headers {"Authorization" (str "Bearer " token)
                                        "Content-Type" "application/json"}
                              :body (js/JSON.stringify
-                                    #js {:model "text-davinci-edit-001"
+                                    #js {:model "code-davinci-edit-001"
                                          :input text
                                          :instruction instruction
                                          :temperature 0.1})}))
           ^js json (.json f)
-          _ (def json json)
           [choice] (.-choices json)
           suggestion (.-text choice)]
     (.setTextInBufferRange editor selection suggestion)))
@@ -75,3 +66,5 @@
         (.. js/atom -commands (add "atom-text-editor"
                                 "minivac:change-selected-code"
                                 #(edit-code!)))))
+
+; Make a fibonacci sequence in Clojure
