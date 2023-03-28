@@ -62,11 +62,11 @@
     (set! (.-onkeydown input)
       #(case (.-key ^js %)
          "Escape" (do
-                    (.destroy @panel)
+                    (.destroy ^js @panel)
                     (refocus!)
                     (p/resolve! result nil))
          "Enter" (do
-                   (.destroy @panel)
+                   (.destroy ^js @panel)
                    (p/resolve! result (.-value input)))
          :no-op))
     (save-focus! input)
