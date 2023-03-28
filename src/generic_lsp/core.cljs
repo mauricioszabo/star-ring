@@ -1,11 +1,8 @@
 (ns generic-lsp.core
   (:require [generic-lsp.commands :as cmds]
-            [common.atom :refer [subscriptions open-paths atom-state]]
+            [common.atom :refer [subscriptions open-paths atom-state] :as atom]
             [promesa.core :as p]
             ["atom" :refer [CompositeDisposable]]))
-
-(defn- info! [message]
-  (.. js/atom -notifications (addInfo message)))
 
 (def conjset (fnil conj #{}))
 
@@ -102,4 +99,4 @@
 (defn- ^:dev/after-load re-activate []
   (reset! subscriptions (CompositeDisposable.))
   (activate @atom-state)
-  (info! "Reloaded Generic LSP package"))
+  (atom/info! "Reloaded Generic LSP package"))
