@@ -22,10 +22,10 @@
 (defn open-linter []
   (.. js/atom
       -workspace
-      (open "pulsar://start-linter" #js {:location "bottom"
-                                         :searchAllPanes true
-                                         :activatePane true
-                                         :activateItem true})))
+      (open "pulsar://star-linter" #js {:location "bottom"
+                                        :searchAllPanes true
+                                        :activatePane true
+                                        :activateItem true})))
 
 (defn- text-editor-observer [^js text-editor]
   (when text-editor
@@ -113,12 +113,10 @@
   (r-dom/render [:f> main-window] div)
   (.add subs
         (.. js/atom -workspace
-            (addOpener (fn [uri] (when (= uri "pulsar://start-linter") ui)))))
+            (addOpener (fn [uri] (when (= uri "pulsar://star-linter") ui)))))
   (.add subs (.. js/atom -views (addViewProvider Ui (constantly div)))))
 
 (defn- render [added removed _messages]
-  (prn :A added)
-  (prn :R removed)
   (doseq [msg added] (re/dispatch [:star-linter/add-message msg]))
   (doseq [msg removed] (re/dispatch [:star-linter/remove-message msg])))
 
@@ -177,7 +175,6 @@
        :didBeginLinting (fn [linter path] (begin-linting linter path))
        :didFinishLinting (fn [linter path] (finish-linting linter path))
        :render (fn [^js input]
-                 (prn :RENDERa)
                  (render (.-added input)
                          (.-removed input)
                          (.-messages input)))
