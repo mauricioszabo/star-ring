@@ -24,7 +24,7 @@
   (.add @subscriptions
         (. text-editor onDidDestroy #(remove-editor text-editor)))
   (.add @subscriptions
-        (. text-editor onDidStopChanging #(cmds/sync-document! text-editor (.-changes ^js %))))
+        (. text-editor onDidChange #(cmds/sync-document! text-editor (.-changes ^js %))))
   (.add @subscriptions
         (. text-editor onDidSave #(cmds/save-document! text-editor))))
 

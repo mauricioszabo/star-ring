@@ -52,8 +52,6 @@
       :else (recur (subs prefix 1)))))
 
 (defn- suggestions [^js data]
-  (when-not (.-activatedManually data) (cmds/sync-document! (.-editor data) {}))
-
   (p/let [^js editor (.-editor data)
           {:keys [result]} (cmds/autocomplete editor)
           prefix (get-prefix! editor)
