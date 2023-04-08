@@ -1,3 +1,8 @@
+## Rolling Release
+- Fixed prefix for some autocompletions
+- Fixed datatip when a scope didn't exist under the cursor
+- Fixed star-linter's UI opening
+
 ## Generic LSP 0.1.3 - Rust and Lua
 - Adding support for rust-analyzer
 - Adding support for lua-language-server
