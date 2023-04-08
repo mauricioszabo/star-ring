@@ -1,6 +1,7 @@
 (ns generic-lsp.complete
   (:require [generic-lsp.commands :as cmds]
-            [promesa.core :as p]))
+            [promesa.core :as p]
+            [clojure.string :as str]))
 
 ;; TODO: Atom/Pulsar does not have icons for all elements that are available on LSP,
 ;; and there are some that are not used at all, like builtin, import and require.
@@ -44,15 +45,25 @@
       (.getTextInBufferRange editor #js [#js [current-row start-of-word]
                                          #js [current-row current-column]]))))
 
-(defn- ^:inline normalize-prefix [to-insert prefix]
-  (loop [prefix prefix]
-    (cond
-      (= (first to-insert) (first prefix)) prefix
-      (empty? prefix) nil
-      :else (recur (subs prefix 1)))))
+(defn- re-escape [str]
+  (str/replace str #"[.*+?^${}()|\[\]\\]" "\\$&"))
+
+(defn- ^:inline normalize-prefix [^js editor prefix]
+  (when-let [trigger-chars (some-> @cmds/loaded-servers
+                                   (get (.. editor getGrammar -name))
+                                   :capabilities
+                                   :completionProvider
+                                   :triggerCharacters)]
+    (->> trigger-chars
+         (map re-escape)
+         (str/join "|")
+         re-pattern
+         (.split prefix)
+         last)))
 
 (defn- suggestions [^js data]
   (p/let [^js editor (.-editor data)
+          _ (prn :EDITOR editor)
           {:keys [result]} (cmds/autocomplete editor)
           prefix (get-prefix! editor)
           items (if-let [items (:items result)]
@@ -65,7 +76,7 @@
                       common {:displayText (:label result)
                               :type (some-> result :kind dec types)
                               :description (:detail result)
-                              :replacementPrefix (normalize-prefix to-insert prefix)}]
+                              :replacementPrefix (normalize-prefix editor prefix)}]
                   (if snippet?
                     (assoc common :snippet to-insert)
                     (assoc common :text to-insert)))))
