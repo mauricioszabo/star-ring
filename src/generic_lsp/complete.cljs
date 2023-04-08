@@ -63,7 +63,6 @@
 
 (defn- suggestions [^js data]
   (p/let [^js editor (.-editor data)
-          _ (prn :EDITOR editor)
           {:keys [result]} (cmds/autocomplete editor)
           prefix (get-prefix! editor)
           items (if-let [items (:items result)]
