@@ -3,7 +3,7 @@
 (defn- last-commit-changed-ring? [ring]
   (->> (shell/sh "git" "diff" "HEAD^")
       :out
-      (re-find (re-pattern (str "src/" ring)))))
+      (re-find (re-pattern (str "src/" (str/replace ring #"-" "_"))))))
 
 (defn- fix-shadow-cljs! [ring]
   (let [shadow-config (->> "shadow-cljs.edn"
