@@ -14,8 +14,8 @@ jobs:
       - run: tar -xf babashka*
       - run: rm babashka*
       - run: mv bb /tmp
-      - run: /tmp/bb scripts/prepare-ring-release.clj generic_lsp
-      - run: /tmp/bb scripts/prepare-ring-release.clj star_linter
+      - run: /tmp/bb scripts/prepare-ring-release.clj generic-lsp
+      - run: /tmp/bb scripts/prepare-ring-release.clj star-linter
       - run: /tmp/bb scripts/prepare-ring-release.clj minivac
 
 workflows:
