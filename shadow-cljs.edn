@@ -8,7 +8,7 @@
  {:package {:target :node-library
             :js-options {:js-provider :shadow
                          :keep-native-requires true
-                         :keep-as-require #{"atom" "electron"}}
+                         :keep-as-require #{"atom" "electron" "@npmcli/arborist"}}
 
             :compiler-options {:infer-externs :auto}
             :exports {;; Generic LSP
@@ -32,6 +32,10 @@
                       :minivac-config minivac.core/config
 
                       :vs-activate vs-pulsar.core/activate
-                      :vs-deactivate vs-pulsar.core/deactivate}
+                      :vs-deactivate vs-pulsar.core/deactivate
+
+                      :ring-package-manager-activate generic-lsp.ring-package-manager/activate
+                      :ring-package-manager-deactivate generic-lsp.ring-package-manager/deactivate
+                      :ring-package-manager-provider generic-lsp.ring-package-manager/provider}
             :output-to "star-ring/common.js"
             :output-dir "star-ring"}}}

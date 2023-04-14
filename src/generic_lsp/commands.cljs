@@ -115,7 +115,7 @@
                                           :capabilities (-> init-res :result :capabilities)})
     (doseq [[_ editors] open-editors
             :let [editor (first editors)]
-            :when (= language (some-> editor .getGrammar .-name))]
+            :when (= language (some-> ^js editor .getGrammar .-name))]
       (open-document! editor))))
 
 (defn- curr-editor-lang [] (.. js/atom -workspace getActiveTextEditor getGrammar -name))
