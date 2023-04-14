@@ -20,17 +20,6 @@
 
 (def provider #js {})
 
-#_
-(let [package-name "termination"]
-  (let [directory (->> js/atom
-                       .-packages
-                       .getAvailablePackagePaths
-                       (filter #(-> % path/basename (= package-name)))
-                       first)]
-    (if directory
-      (do-rebuild! directory)
-      (atom/warn! (str "Could not find package " package-name)))))
-
 (defn- install-deps! [package-path]
   (set! (.. js/process -env -npm_config_target) (.. js/process -versions -electron))
   (set! (.. js/process -env -npm_config_disturl) "https://electronjs.org/headers")
@@ -43,6 +32,11 @@
     (println "Dependencies resolved, downloading...")
     (.reify arb)
     (println "Done")))
+
+(defn- rebuild! [package-dir]
+  (p/let [node-modules (path/join package-dir "node_modules")]
+    (.. fs -promises (rmdir node-modules #js {:recursive true}))
+    (install-deps! package-dir)))
 
 (defn- move-to-pulsar-dir! [dir-to-clone]
   (p/let [package-json (path/join dir-to-clone "package.json")
@@ -68,5 +62,5 @@
     (move-to-pulsar-dir! dir-to-clone)))
 
 #_
-(install-package! "https://github.com/b3by/atom-clock.git"
-                  "v0.1.18")
+(install-package! "https://github.com/bus-stop/Termination.git"
+                  "v0.7.7")
