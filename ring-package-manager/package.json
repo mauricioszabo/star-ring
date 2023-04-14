@@ -15,5 +15,8 @@
   },
   "engines": {
     "pulsar": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+    "@npmcli/arborist": "^6.2.7"
   }
 }

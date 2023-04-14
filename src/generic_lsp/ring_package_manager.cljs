@@ -31,43 +31,7 @@
       (do-rebuild! directory)
       (atom/warn! (str "Could not find package " package-name)))))
 
-#_
-(defn- do-rebuild! [package-dir]
-  (def package-dir package-dir)
-  (-> (rebuild #js {:buildPath (path/join package-dir "node_modules" "node-pty-prebuilt-multiarch")
-                    ; :force true
-                    :electronVersion (.. js/process -versions -electron)})
-      (p/then #(prn :WOW "IT WORKED!"))
-      (p/catch #(do
-                  (prn :WELL "we expected this")
-                  (def error %)))))
-
-(defn- rebuild! [package-name])
-
-; (.. js/process -versions -electron)
-; (prn :RE rebuild)
-
-#_
-(let [package-name "termination"]
-  (let [directory (->> js/atom
-                       .-packages
-                       .getAvailablePackagePaths
-                       (filter #(-> % path/basename (= package-name)))
-                       first)]
-    (if directory
-      (p/catch (install-deps! directory)
-               #(do
-                  (def e %)
-                  (atom/error! (str "Could not install dependencies for " package-name)
-                               (pr-str %))))
-      (atom/warn! (str "Could not find package " package-name)))))
-
-
 (defn- install-deps! [package-path]
-  ; (let [npm_config_target (.. js/process -env -npm_config_target)
-  ;       npm_config_disturl (.. js/process -env -npm_config_disturl)
-  ;       npm_config_runtime (.. js/process -env -npm_config_runtime)
-  ;       npm_config_build_from_source (.. js/process -env -npm_config_build_from_source)]
   (set! (.. js/process -env -npm_config_target) (.. js/process -versions -electron))
   (set! (.. js/process -env -npm_config_disturl) "https://electronjs.org/headers")
   (set! (.. js/process -env -npm_config_runtime) "electron")
@@ -79,14 +43,7 @@
     (println "Dependencies resolved, downloading...")
     (.reify arb)
     (println "Done")))
- ;  process.env.npm_config_target='12.2.3'
- ; process.env.npm_config_disturl='https://electronjs.org/headers'
- ; process.env.npm_config_runtime=''
- ; process.env.npm_config_build_from_source='true')
 
-; (p/catch (.. fs -promises (mkdtemp "asd")) prn)
-; (.. js/process -versions)
-; (. fs te)
 (defn- move-to-pulsar-dir! [dir-to-clone]
   (p/let [package-json (path/join dir-to-clone "package.json")
           package-json-contents (.. fs -promises (readFile package-json "UTF-8"))
