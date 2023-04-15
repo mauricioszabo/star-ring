@@ -1,4 +1,4 @@
-(ns generic-lsp.ring-package-manager
+(ns ring-package-manager.core
   (:require [common.atom :as atom]
             [promesa.core :as p]
             ["os" :as os]
@@ -26,16 +26,29 @@
   (set! (.. js/process -env -npm_config_runtime) "electron")
   (set! (.. js/process -env -npm_config_build_from_source) "true")
 
-  (p/let [^js arb (new Arborist #js {:path package-path})]
-    (println "Starting to install deps")
-    (.buildIdealTree arb)
-    (println "Dependencies resolved, downloading...")
-    (.reify arb)
-    (println "Done")))
+
+  (p/let [log (partial prn :LOG)
+          ^js arb (new Arborist #js {:path package-path
+                                     :installStrategy "hoisted"
+                                     :force true
+                                     :lockfileVersion 2
+                                     :cache "/home/mauricio/.npm/_cacache"})]
+    (def l log)
+    (js/process.on "log" log)
+    ; (println "Starting to install deps")
+    (.buildIdealTree arb #js {:saveType "prod"})
+    ; (println "Dependencies resolved, downloading...")
+    (.reify arb (partial prn :reify))
+    (println "Done")
+    (js/process.off "log" log)))
+
+; (.. arb -actualTree)
+; (println (.toString (.. arb -addTracker)))
 
 (defn- rebuild! [package-dir]
   (p/let [node-modules (path/join package-dir "node_modules")]
-    (.. fs -promises (rmdir node-modules #js {:recursive true}))
+    (.catch (.. fs -promises (rmdir node-modules #js {:recursive true}))
+            #(println "node_modules not removed - probably doesn't exist"))
     (install-deps! package-dir)))
 
 (defn- move-to-pulsar-dir! [dir-to-clone]
@@ -62,5 +75,10 @@
     (move-to-pulsar-dir! dir-to-clone)))
 
 #_
-(install-package! "https://github.com/bus-stop/Termination.git"
-                  "v0.7.7")
+(install-package! "https://github.com/nteract/hydrogen.git"
+                  "v2.16.5")
+
+#_(p/catch (rebuild! "/tmp/hydrogen.git")
+           (partial prn :ERROR))
+
+; (. js/process on)
