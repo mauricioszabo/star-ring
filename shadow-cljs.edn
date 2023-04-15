@@ -34,8 +34,8 @@
                       :vs-activate vs-pulsar.core/activate
                       :vs-deactivate vs-pulsar.core/deactivate
 
-                      :ring-package-manager-activate generic-lsp.ring-package-manager/activate
-                      :ring-package-manager-deactivate generic-lsp.ring-package-manager/deactivate
-                      :ring-package-manager-provider generic-lsp.ring-package-manager/provider}
+                      :ring-package-manager-activate ring-package-manager.core/activate
+                      :ring-package-manager-deactivate ring-package-manager.core/deactivate
+                      :ring-package-manager-provider ring-package-manager.core/provider}
             :output-to "star-ring/common.js"
             :output-dir "star-ring"}}}
