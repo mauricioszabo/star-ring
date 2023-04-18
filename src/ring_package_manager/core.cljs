@@ -25,8 +25,6 @@
   (set! (.. js/process -env -npm_config_disturl) "https://electronjs.org/headers")
   (set! (.. js/process -env -npm_config_runtime) "electron")
   (set! (.. js/process -env -npm_config_build_from_source) "true")
-
-
   (p/let [log (partial prn :LOG)
           ^js arb (new Arborist #js {:path package-path
                                      :installStrategy "hoisted"
@@ -79,6 +77,9 @@
                   "v2.16.5")
 
 #_(p/catch (rebuild! "/tmp/hydrogen.git")
+           (partial prn :ERROR))
+
+#_(p/catch (rebuild! "/home/mauricio/.pulsar/packages/x-terminal-reloaded")
            (partial prn :ERROR))
 
 ; (. js/process on)
