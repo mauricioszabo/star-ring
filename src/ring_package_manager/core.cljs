@@ -31,7 +31,6 @@
                                      :force true
                                      :lockfileVersion 2
                                      :cache "/home/mauricio/.npm/_cacache"})]
-    (def l log)
     (js/process.on "log" log)
     ; (println "Starting to install deps")
     (.buildIdealTree arb #js {:saveType "prod"})
