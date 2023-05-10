@@ -93,7 +93,6 @@
                                   (cond-> (conj elems-to-add span)
                                     second (conj (subs item s (first second))))))
                               [(subs item 0 (first matches))]))]
-    (prn :WAT? to-apply)
     (cond-> to-apply
       (-> item count (not= (last matches)))
       (conj (subs item (-> matches last inc))))))
@@ -101,20 +100,24 @@
 (defn- item-for-list [panel-a {:keys [text description value]}]
   (let [^js panel @panel-a
         elem (js/document.createElement "li")
-        div (js/document.createElement "div")
+        first-line (js/document.createElement "div")
         matches (some->> panel .getFilterQuery not-empty (match text))]
     (.. elem -classList (add "two-lines"))
-    (.. div -classList (add "primary-line"))
-    (.appendChild elem div)
+    (.. first-line -classList (add "primary-line"))
+    (.appendChild elem first-line)
     (doseq [match (if matches
                     (make-match-elems matches text)
                     [text])]
-      (prn :WAT? match (.-innerText match))
-      (.append div match))
+      (.append first-line match))
+    (when description
+      (let [second-line (js/document.createElement "div")]
+        (.. second-line -classList (add "secondary-line"))
+        (set! (.-innerText second-line) description)
+        (.appendChild elem second-line)))
     elem))
 
 #_
-(select-view! [{:text "Hell0" :value 0}
+(select-view! [{:text "Hell0" :description "Hello, my baby, hello, my honey" :value 0}
                {:text "Is it me" :value 1}
                {:text "Youre looking for" :value 2}])
 
