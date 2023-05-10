@@ -281,6 +281,24 @@
         (atom/open-editor res)
         (atom/warn! "No type declaration found")))))
 
+(defn go-to-implementation! []
+  (p/let [res (go-to-thing! :implementationProvider "textDocument/implementation"
+                            "go to implementation")]
+    (when res
+      (if-let [res (:result res)]
+        (atom/open-editor res)
+        (atom/warn! "No implementation found")))))
+
+
+#_
+(let [lang (curr-editor-lang)
+      editor (.. js/atom -workspace getActiveTextEditor)]
+  (position-from-editor editor)
+  (send-command! lang "textDocument/references" (assoc (position-from-editor editor)
+                                                       :context {:includeDeclaration true})))
+; (go-to-thing! :referencesProvider "textDocument/references"
+;                             "go to implementation")
+
 (defn autocomplete [^js editor]
   (let [lang (.. editor getGrammar -name)]
     (when (have-capability? lang :completionProvider)

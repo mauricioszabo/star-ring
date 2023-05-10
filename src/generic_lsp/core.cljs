@@ -75,6 +75,9 @@
                            (add "atom-text-editor" "generic-lsp:go-to-type-definition"
                                 #(cmds/go-to-type-definition!))))
   (.add @subscriptions (.. js/atom -commands
+                           (add "atom-text-editor" "generic-lsp:go-to-implementation"
+                                #(cmds/go-to-implementation!))))
+  (.add @subscriptions (.. js/atom -commands
                            (add "atom-text-editor" "generic-lsp:format-document"
                                 #(cmds/format-doc!))))
   (.add @subscriptions (.. js/atom -commands
