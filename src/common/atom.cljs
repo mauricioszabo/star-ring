@@ -116,11 +116,6 @@
         (.appendChild elem second-line)))
     elem))
 
-#_
-(select-view! [{:text "Hell0" :description "Hello, my baby, hello, my honey" :value 0}
-               {:text "Is it me" :value 1}
-               {:text "Youre looking for" :value 2}])
-
 (defn select-view! [items]
   (let [result (p/deferred)
         select-a (atom nil)
