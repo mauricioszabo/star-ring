@@ -116,33 +116,37 @@
         (.appendChild elem second-line)))
     elem))
 
-(defn select-view! [items]
-  (let [result (p/deferred)
-        select-a (atom nil)
-        panel-a (atom nil)
-        params #js {:items (into-array items)
-                    :filterKeyForItem #(:text %)
-                    :didConfirmSelection (fn [{:keys [value]}]
-                                           (.destroy ^js @panel-a)
-                                           (.destroy ^js @select-a)
-                                           (refocus!)
-                                           (p/resolve! result value))
-                    :elementForItem #(item-for-list select-a %)}
-        select (new SelectListView params)
-        element (.-element select)
-        panel (delay (.. js/atom -workspace (addModalPanel #js {:item element})))
-        input (.querySelector element "input")]
-    (.. element -classList (add "fuzzy-finder"))
-    ;; Stupid OO-based approach...
-    (reset! select-a select)
-    (reset! panel-a @panel)
-    (save-focus! input)
-    (set! (.-onkeydown input)
-      #(case (.-key ^js %)
-         "Escape" (do
-                    (.destroy ^js @panel)
-                    (.destroy select)
-                    (refocus!)
-                    (p/resolve! result nil))
-         :no-op))
-    result))
+(defn select-view!
+  ([items] (select-view! items {}))
+  ([items {:keys [item-selected]}]
+   (let [result (p/deferred)
+         select-a (atom nil)
+         panel-a (atom nil)
+         params #js {:items (into-array items)
+                     :filterKeyForItem #(:text %)
+                     :didConfirmSelection (fn [{:keys [value]}]
+                                            (.destroy ^js @panel-a)
+                                            (.destroy ^js @select-a)
+                                            (refocus!)
+                                            (p/resolve! result value))
+                     :elementForItem #(item-for-list select-a %)}
+         _ (cond-> params
+             item-selected (aset "didChangeSelection" item-selected))
+         select (new SelectListView params)
+         element (.-element select)
+         panel (delay (.. js/atom -workspace (addModalPanel #js {:item element})))
+         input (.querySelector element "input")]
+     (.. element -classList (add "fuzzy-finder"))
+     ;; Stupid OO-based approach...
+     (reset! select-a select)
+     (reset! panel-a @panel)
+     (save-focus! input)
+     (set! (.-onkeydown input)
+       #(case (.-key ^js %)
+          "Escape" (do
+                     (.destroy ^js @panel)
+                     (.destroy select)
+                     (refocus!)
+                     (p/resolve! result nil))
+          :no-op))
+     result)))
