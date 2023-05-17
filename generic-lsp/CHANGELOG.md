@@ -1,4 +1,7 @@
 ## Rolling Release
+- Added support for command `generic-lsp:go-to-implementation`
+- Added support for command `generic-lsp:find-references`
+- Added support to search for multiple definitions/declarations
 - Fixed prefix for some autocompletions
 - Fixed datatip when a scope didn't exist under the cursor
 - Fixed star-linter's UI opening
