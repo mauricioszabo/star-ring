@@ -131,7 +131,7 @@
                                             (p/resolve! result value))
                      :elementForItem #(item-for-list select-a %)}
          _ (cond-> params
-             item-selected (aset "didChangeSelection" item-selected))
+             item-selected (aset "didChangeSelection" #(item-selected % select-a)))
          select (new SelectListView params)
          element (.-element select)
          panel (delay (.. js/atom -workspace (addModalPanel #js {:item element})))
