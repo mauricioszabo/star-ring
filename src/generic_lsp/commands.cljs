@@ -257,23 +257,46 @@
         (when (-> res :result not-empty) res))
       (atom/warn! (str "Language " lang " does not support " explanation)))))
 
+(defn- preview-editor! [{:keys [value]} select-view-a]
+  (p/let [input (.. @select-view-a -element (querySelector "input"))
+          a (.. js/atom -workspace (open (-> value :uri url/fileURLToPath)
+                                         #js {:pending true
+                                              :activateItem true
+                                              :activatePane false
+                                              :initialLine (-> value :range :start :line)
+                                              :initialColumn (-> value :range :start :character)
+                                              :searchAllPanes true}))]
+    (.focus input)))
+
 (defn- select-file-to-open [results]
-  (p/let [project (.-project js/atom)
-          choice (atom/select-view!
-                  (for [result results
-                        :let [basename (.basename path (:uri result))
-                              start (-> result :range :start)
-                              full-path (str (->> result :uri
-                                                  url/fileURLToPath
-                                                  ^js (. project relativizePath)
-                                                  second)
-                                             ":"
-                                             (-> start :line inc) ":"
-                                             (-> start :character inc))]]
-                    {:text basename
-                     :description full-path
-                     :value result}))]
-    (some-> choice atom/open-editor)))
+  (let [project (.-project js/atom)
+        ^js pane (.. js/atom -workspace getActivePane)
+        ^js editor (.. js/atom -workspace getActiveTextEditor)
+        selected-ranges (.getSelectedBufferRanges editor)
+        choice (atom/select-view!
+                (for [result results
+                      :let [basename (.basename path (:uri result))
+                            start (-> result :range :start)
+                            full-path (str (->> result :uri
+                                                url/fileURLToPath
+                                                ^js (. project relativizePath)
+                                                second)
+                                           ":"
+                                           (-> start :line inc) ":"
+                                           (-> start :character inc))]]
+                  {:text basename
+                   :description full-path
+                   :value result})
+                {:item-selected preview-editor!})]
+    (p/then choice
+            (fn [choice]
+              (if choice
+                (atom/open-editor choice)
+                (let [current-editor (.. js/atom -workspace getActiveTextEditor)]
+                  (when (not= (.-id current-editor) (.-id editor))
+                    (.activate pane)
+                    (.activateItem pane))
+                  (.setSelectedBufferRanges editor selected-ranges)))))))
 
 (defn- open-first-select-or-fail [res warn-message]
   (when res
