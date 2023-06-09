@@ -1,1 +1,0 @@
-- Added a simple ChatGPT helper
