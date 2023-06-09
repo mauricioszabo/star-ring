@@ -1,6 +1,9 @@
 (ns common.atom
   (:require ["atom" :refer [CompositeDisposable]]
+            ["atom-select-list" :as SelectListView]
             ["url" :as url]
+            ["fuzzaldrin" :refer [match]]
+            [reagent.dom.server :as r-dom]
             [promesa.core :as p]))
 
 (defonce atom-state (atom nil))
@@ -35,7 +38,6 @@
 
 (defonce focus (atom nil))
 (defn save-focus! [elem]
-  (def elem elem)
   (when-not @focus
     (reset! focus (some-> js/atom .-workspace .getActiveTextEditor .-element)))
   (p/do!
@@ -72,3 +74,79 @@
     (save-focus! input)
     @panel
     result))
+
+(defn- make-match-elems [matches item]
+  (let [to-apply (->> matches
+                      (partition 2 1)
+                      (reduce (fn [acc [first second]]
+                                (let [[fst] (peek acc)]
+                                  (if (-> first inc (= second))
+                                    (-> acc pop (conj [fst second]))
+                                    (-> acc (conj [second])))))
+                              [[(first matches)]])
+                      (partition-all 2 1)
+                      (reduce (fn [elems-to-add [[f s] second]]
+                                (let [s (if s (inc s) (inc f))
+                                      span (doto (js/document.createElement "span")
+                                                 (.. -classList (add "character-match"))
+                                                 (aset "innerText" (subs item f s)))]
+                                  (cond-> (conj elems-to-add span)
+                                    second (conj (subs item s (first second))))))
+                              [(subs item 0 (first matches))]))]
+    (cond-> to-apply
+      (-> item count (not= (last matches)))
+      (conj (subs item (-> matches last inc))))))
+
+(defn- item-for-list [panel-a {:keys [text description value]}]
+  (let [^js panel @panel-a
+        elem (js/document.createElement "li")
+        first-line (js/document.createElement "div")
+        matches (some->> panel .getFilterQuery not-empty (match text))]
+    (.. elem -classList (add "two-lines"))
+    (.. first-line -classList (add "primary-line"))
+    (.appendChild elem first-line)
+    (doseq [match (if matches
+                    (make-match-elems matches text)
+                    [text])]
+      (.append first-line match))
+    (when description
+      (let [second-line (js/document.createElement "div")]
+        (.. second-line -classList (add "secondary-line"))
+        (set! (.-innerText second-line) description)
+        (.appendChild elem second-line)))
+    elem))
+
+(defn select-view!
+  ([items] (select-view! items {}))
+  ([items {:keys [item-selected]}]
+   (let [result (p/deferred)
+         select-a (atom nil)
+         panel-a (atom nil)
+         params #js {:items (into-array items)
+                     :filterKeyForItem #(:text %)
+                     :didConfirmSelection (fn [{:keys [value]}]
+                                            (.destroy ^js @panel-a)
+                                            (.destroy ^js @select-a)
+                                            (refocus!)
+                                            (p/resolve! result value))
+                     :elementForItem #(item-for-list select-a %)}
+         _ (cond-> params
+             item-selected (aset "didChangeSelection" #(item-selected % select-a)))
+         select (new SelectListView params)
+         element (.-element select)
+         panel (delay (.. js/atom -workspace (addModalPanel #js {:item element})))
+         input (.querySelector element "input")]
+     (.. element -classList (add "fuzzy-finder"))
+     ;; Stupid OO-based approach...
+     (reset! select-a select)
+     (reset! panel-a @panel)
+     (save-focus! input)
+     (set! (.-onkeydown input)
+       #(case (.-key ^js %)
+          "Escape" (do
+                     (.destroy ^js @panel)
+                     (.destroy select)
+                     (refocus!)
+                     (p/resolve! result nil))
+          :no-op))
+     result)))

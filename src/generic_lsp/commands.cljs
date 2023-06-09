@@ -115,7 +115,7 @@
                                           :capabilities (-> init-res :result :capabilities)})
     (doseq [[_ editors] open-editors
             :let [editor (first editors)]
-            :when (= language (some-> editor .getGrammar .-name))]
+            :when (= language (some-> ^js editor .getGrammar .-name))]
       (open-document! editor))))
 
 (defn- curr-editor-lang [] (.. js/atom -workspace getActiveTextEditor getGrammar -name))
@@ -257,29 +257,85 @@
         (when (-> res :result not-empty) res))
       (atom/warn! (str "Language " lang " does not support " explanation)))))
 
+(defn- preview-editor! [{:keys [value]} select-view-a]
+  (p/let [input (.. @select-view-a -element (querySelector "input"))
+          a (.. js/atom -workspace (open (-> value :uri url/fileURLToPath)
+                                         #js {:pending true
+                                              :activateItem true
+                                              :activatePane false
+                                              :initialLine (-> value :range :start :line)
+                                              :initialColumn (-> value :range :start :character)
+                                              :searchAllPanes true}))]
+    (.focus input)))
+
+(defn- select-file-to-open [results]
+  (let [project (.-project js/atom)
+        ^js pane (.. js/atom -workspace getActivePane)
+        ^js editor (.. js/atom -workspace getActiveTextEditor)
+        selected-ranges (.getSelectedBufferRanges editor)
+        choice (atom/select-view!
+                (for [result results
+                      :let [basename (.basename path (:uri result))
+                            start (-> result :range :start)
+                            full-path (str (->> result :uri
+                                                url/fileURLToPath
+                                                ^js (. project relativizePath)
+                                                second)
+                                           ":"
+                                           (-> start :line inc) ":"
+                                           (-> start :character inc))]]
+                  {:text basename
+                   :description full-path
+                   :value result})
+                {:item-selected preview-editor!})]
+    (p/then choice
+            (fn [choice]
+              (if choice
+                (atom/open-editor choice)
+                (let [current-editor (.. js/atom -workspace getActiveTextEditor)]
+                  (when (not= (.-id current-editor) (.-id editor))
+                    (.activate pane)
+                    (.activateItem pane))
+                  (.setSelectedBufferRanges editor selected-ranges)))))))
+
+(defn- open-first-select-or-fail [res warn-message]
+  (when res
+    (if-let [results (-> res :result not-empty)]
+      (if (-> results count (= 1))
+        (atom/open-editor results)
+        (select-file-to-open results))
+      (atom/warn! warn-message))))
+
 (defn go-to-declaration! []
-  (p/let [res (go-to-thing! :declarationProvider "textDocument/declaration"
-                            "go to declaration")]
-    (when res
-      (if-let [res (:result res)]
-        (atom/open-editor res)
-        (atom/warn! "No declaration found")))))
+  (p/then (go-to-thing! :declarationProvider "textDocument/declaration"
+                        "go to declaration")
+          #(open-first-select-or-fail % "No declaration found")))
 
 (defn go-to-definition! []
-  (p/let [res (go-to-thing! :definitionProvider "textDocument/definition"
-                            "go to definition")]
-    (when res
-      (if-let [res (:result res)]
-        (atom/open-editor res)
-        (atom/warn! "No definition found")))))
+  (p/then (go-to-thing! :definitionProvider "textDocument/definition"
+                        "go to definition")
+          #(open-first-select-or-fail % "No definition found")))
 
 (defn go-to-type-definition! []
-  (p/let [res (go-to-thing! :typeDefinitionProvider "textDocument/typeDefinition"
-                            "go to type declaration")]
-    (when res
-      (if-let [res (:result res)]
-        (atom/open-editor res)
-        (atom/warn! "No type declaration found")))))
+  (p/then (go-to-thing! :typeDefinitionProvider "textDocument/typeDefinition"
+                        "go to type declaration")
+          #(open-first-select-or-fail % "No type declaration found")))
+
+(defn go-to-implementation! []
+  (p/then (go-to-thing! :implementationProvider "textDocument/implementation"
+                        "go to implementation")
+          #(open-first-select-or-fail % "No implementation found")))
+
+(defn get-references! []
+  (p/let [lang (curr-editor-lang)
+          editor (.. js/atom -workspace getActiveTextEditor)
+          references (send-command! lang "textDocument/references"
+                                    (assoc (position-from-editor editor)
+                                           :context {:includeDeclaration true}))
+          project (.-project js/atom)]
+    (if-let [results (-> references :result not-empty)]
+      (select-file-to-open results)
+      (atom/warn! "No references found for the current position"))))
 
 (defn autocomplete [^js editor]
   (let [lang (.. editor getGrammar -name)]
