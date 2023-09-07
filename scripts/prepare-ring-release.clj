@@ -71,6 +71,8 @@
     (shell "git" "checkout" "-")
     (shell "git" "branch" "-D" "RELEASE-DELETE-THIS")
     (shell "git" "push" "--tags")
+    (shell "git" "remote" "add" "github" "git@github.com:mauricioszabo/star-ring.git")
+    (shell "git" "push" "github" (str ring "@" @version))
     (println "Successfully tagged" (str ring "@" @version))))
 
 (when (= *file* (System/getProperty "babashka.file"))
