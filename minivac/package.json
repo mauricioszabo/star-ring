@@ -3,7 +3,7 @@
   "main": "./index.js",
   "version": "0.1.3",
   "description": "A OpenAI-empowered completion",
-  "keywords": [],
+  "keywords": ["chatgpt", "ai"],
   "repository": "https://github.com/mauricioszabo/star-ring",
   "license": "MIT",
   "providedServices": {
