@@ -1,60 +1,16 @@
-# Star Ring
+# Generic LSP - connect into anything!
 
-Like a Dyson Sphere, a mega-structure of packages around Pulsar
+LSP (Language Server Protocol) is a generic way for any editor to interact with any programming language. Originally drafted for VSCode, LSP is a protocol that allows any editor to have the same capabilities like Autocomplete, Go To Var Definition/Declaration, etc.
 
-## Subprojects
+Atom/Pulsar does not have the same capabilities for LSP than other editor, so this package tries to fix that gap by adding "Generic LSP" capabilities: with some easy configurations, it is possible to fire up a LSP server (via command line for now) and have autocomplete, go to var definition, linter, and other niceties that other editors take for granted.
 
-Star Ring is made of a bunch of subprojects - each one of them is a specific package, but
-they can be bundled together to form a better editor experience on Pulsar
+This package is meant to be a "generic" LSP. It will **not install** any LSP server for you (you need to install yourself, and have it on your PATH, or configure the path inside the package's configuration) and it will **not install** additional packages for you (but it does integrate with existing known packages like Linter and Linter UI for example)
 
-### Generic LSP
+## What is implemented
 
-A generic LSP client that connects to any LSP server (supported and, in the future, even
-servers that are not officially supported can be used) and offers autocomplete, etc.
+- Linter (needs the `linter` package)
+- Go To Definition / Declaration / Type Declaration (each one is a specific command for now)
+- Autocomplete (needs the `autocomplete-plus` package, it's probably already installed)
+- Known LSP servers can be started (we still don't have configuration wired up)
 
-Status: Beta, usable. Needs Linter and Intentions for better experience.
-
-### Star Linter
-
-A Linter UI for the Pulsar's package Linter.
-
-Status: In development
-
-### VS Pulsar
-
-A VSCode API over Pulsar one.
-
-Status: Not working yet
-
-## Developing
-
-Because of the way ClojureScript works, we unfortunately can't have two or more
-Pulsar packages in "watch" or "development" mode loaded at the same time because
-they conflict with each other, with weird errors that are quite hard (close to
-impossible) to understand. So if you _do have_ other packages in ClojureScript,
-be sure to compile them on "release" mode (basically - avoid leaking the global
-`goog` variable).
-
-What you'll need to do:
-
-1. Identify the Pulsar packages' directory (usually, `/home/your-user/.pulsar/packages`)
-2. Clone this repository somewhere (let's say, `/home/your-user/projects/star-ring`)
-3. Symlink the packages you want to develop, plus `star-ring`, to your packages
-directory
-4. Install dependencies with `npm install`
-5. Start the watch process with `npx shadow-cljs watch package`
-6. If you have Pulsar open, reload it
-
-So, if your home folder is in `/home/myself`, and you want to develop
-`star-linter` and `generic-lsp`, you can do it by:
-
-```bash
-ln -s /home/myself/projects/star-ring/star-linter \
-  /home/myself/projects/star-ring/generic-lsp \
-  /home/myself/projects/star-ring/star-ring \
-  /home/myself/.pulsar/packages
-
-cd /home/myself/projects/star-ring/
-npm install
-npx shadow-cljs watch package
-```
+![A screenshot of your package](https://f.cloud.github.com/assets/69169/2290250/c35d867a-a017-11e3-86be-cd7c5bf3ff9b.gif)
