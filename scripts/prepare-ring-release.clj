@@ -1,9 +1,10 @@
 (require '[babashka.process :refer [shell]])
 
 (defn- last-commit-changed-ring? [ring]
-  (->> (shell/sh "git" "diff" "HEAD^")
-      :out
-      (re-find (re-pattern (str "src/" (str/replace ring #"-" "_"))))))
+  (let [{:keys [out]} (shell/sh "git" "diff" "HEAD^")]
+    (or
+     (re-find (re-pattern (str "src/" (str/replace ring #"-" "_"))) out)
+     (re-find (re-pattern (str "a/" (str/replace ring #"-" "\\\\-") "/")) out))))
 
 (defn- fix-shadow-cljs! [ring]
   (let [shadow-config (->> "shadow-cljs.edn"
