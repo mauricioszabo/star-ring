@@ -34,6 +34,11 @@
    "builtin"
    "type"])
 
+(defn- get-range! [^js editor]
+  (let [^js cursor (-> editor .getCursors first)]
+    #js [(.getBeginningOfCurrentWordBufferPosition cursor #js {:wordRegex #"[^\s]*"})
+         (.getBufferPosition cursor)]))
+
 (defn- get-prefix! [^js editor]
   (let [^js cursor (-> editor .getCursors first)
         start-of-word (-> cursor
@@ -61,13 +66,25 @@
          (.split prefix)
          last)))
 
+; (->> items
+;      (map (juxt :label :sortText)))
+;      ; count)
 (defn- suggestions [^js data]
+  (def data data)
   (p/let [^js editor (.-editor data)
           {:keys [result]} (cmds/autocomplete editor)
           prefix (get-prefix! editor)
+          replace-range (get-range! editor)
+          _ (def prefix prefix)
+          _ (def replace-range replace-range)
           items (if-let [items (:items result)]
                   items
-                  result)]
+                  result)
+          sorted (if (-> items first :sortText)
+                   (sort-by :sortText items)
+                   (sort-by :label items))]
+
+    (def items items)
     (->> items
          (map (fn [result]
                 (let [to-insert (:insertText result (:label result))
@@ -75,7 +92,8 @@
                       common {:displayText (:label result)
                               :type (some-> result :kind dec types)
                               :description (:detail result)
-                              :replacementPrefix (normalize-prefix editor prefix)}]
+                              :ranges [replace-range]}]
+                  ; :replacementPrefix (normalize-prefix editor prefix)}]
                   (if snippet?
                     (assoc common :snippet to-insert)
                     (assoc common :text to-insert)))))
@@ -91,13 +109,10 @@
   []
   #js {:selector ".source"
        :disableForSelector ".source .comment"
-
        :inclusionPriority 10
        :excludeLowerPriority false
-
        :suggestionPriority 20
-
-       :filterSuggestions true
+       :filterSuggestions false
 
        :getSuggestions (fn [data]
                          (suggestions data))
