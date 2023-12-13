@@ -66,40 +66,43 @@
          (.split prefix)
          last)))
 
-; (->> items
-;      (map (juxt :label :sortText)))
-;      ; count)
+(defn- normalize-result [replace-range result]
+  (let [to-insert (:insertText result (:label result))
+        snippet? (-> result :insertTextFormat (= 2))
+        common {:displayText (:label result)
+                :type (some-> result :kind dec types)
+                :description (:detail result)
+                :ranges [replace-range]}]
+    ; :replacementPrefix (normalize-prefix editor prefix)}]
+    (if snippet?
+      (assoc common :snippet to-insert)
+      (assoc common :text to-insert))))
+
 (defn- suggestions [^js data]
-  (def data data)
   (p/let [^js editor (.-editor data)
           {:keys [result]} (cmds/autocomplete editor)
           prefix (get-prefix! editor)
           replace-range (get-range! editor)
-          _ (def prefix prefix)
-          _ (def replace-range replace-range)
           items (if-let [items (:items result)]
                   items
                   result)
-          sorted (if (-> items first :sortText)
-                   (sort-by :sortText items)
-                   (sort-by :label items))]
+          comparator (fn [a b] (compare (:displayText a) (:displayText b)))
+          autocomplete-items (into (sorted-set-by comparator)
+                                   (map #(normalize-result replace-range %))
+                                   items)
+          fuzzy-filtered (.. js/atom -ui -fuzzyMatcher
+                             (setCandidates (->> autocomplete-items
+                                                 (map :displayText)
+                                                 into-array))
+                             (match (.-prefix data)))
+          fuzzy-indexed (into {} (map (fn [v] [(.-id v) v])) fuzzy-filtered)]
 
-    (def items items)
-    (->> items
-         (map (fn [result]
-                (let [to-insert (:insertText result (:label result))
-                      snippet? (-> result :insertTextFormat (= 2))
-                      common {:displayText (:label result)
-                              :type (some-> result :kind dec types)
-                              :description (:detail result)
-                              :ranges [replace-range]}]
-                  ; :replacementPrefix (normalize-prefix editor prefix)}]
-                  (if snippet?
-                    (assoc common :snippet to-insert)
-                    (assoc common :text to-insert)))))
-         not-empty
+    (->> (for [[id value] (zipmap (range) autocomplete-items)
+               :let [fuzzy-data (get fuzzy-indexed id)]
+               :when fuzzy-data]
+           (assoc value :score (- (.-score fuzzy-data))))
+         (sort-by :score)
          clj->js)))
-
 
 (defn- detailed-suggestion [_data])
   ; (prn :detailed data))
