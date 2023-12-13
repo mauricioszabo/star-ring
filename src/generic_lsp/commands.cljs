@@ -301,9 +301,10 @@
 (defn- open-first-select-or-fail [res warn-message]
   (when res
     (if-let [results (-> res :result not-empty)]
-      (if (-> results count (= 1))
-        (atom/open-editor results)
-        (select-file-to-open results))
+      (cond
+        (map? results) (atom/open-editor results)
+        (-> results count (= 1)) (atom/open-editor (first results))
+        :else (select-file-to-open results))
       (atom/warn! warn-message))))
 
 (defn go-to-declaration! []
