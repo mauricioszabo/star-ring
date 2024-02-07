@@ -1,7 +1,8 @@
 (ns generic-lsp.complete
   (:require [generic-lsp.commands :as cmds]
             [promesa.core :as p]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            ["atom" :refer [Range]]))
 
 ;; TODO: Atom/Pulsar does not have icons for all elements that are available on LSP,
 ;; and there are some that are not used at all, like builtin, import and require.
@@ -34,46 +35,28 @@
    "builtin"
    "type"])
 
-(defn- get-range! [^js editor]
-  (let [^js cursor (-> editor .getCursors first)]
-    #js [(.getBeginningOfCurrentWordBufferPosition cursor #js {:wordRegex #"[^\s]*"})
-         (.getBufferPosition cursor)]))
-
-(defn- get-prefix! [^js editor]
+(defn- get-range! [^js editor prefix]
   (let [^js cursor (-> editor .getCursors first)
-        start-of-word (-> cursor
-                          (.getBeginningOfCurrentWordBufferPosition #js {:wordRegex #"[^\s]*"})
-                          .-column)
-        current-row (.getBufferRow cursor)
-        current-column (.getBufferColumn cursor)]
-    (when (< start-of-word current-column)
-      (.getTextInBufferRange editor #js [#js [current-row start-of-word]
-                                         #js [current-row current-column]]))))
+        first-word (first prefix)
+        buffer (.getBuffer editor)
+        word-ish-range (new Range
+                         (.getBeginningOfCurrentWordBufferPosition cursor #js {:wordRegex #"[^\s]*"})
+                         (.getBufferPosition cursor))
+        offset (. (.getTextInRange buffer word-ish-range) indexOf first-word)]
+    (when (not= -1 offset)
+      (set! (.-start word-ish-range) (.. word-ish-range -start (traverse #js {:column offset})))
+      word-ish-range)))
 
 (defn- re-escape [str]
   (str/replace str #"[.*+?^${}()|\[\]\\]" "\\$&"))
 
-(defn- ^:inline normalize-prefix [^js editor prefix]
-  (when-let [trigger-chars (some-> @cmds/loaded-servers
-                                   (get (.. editor getGrammar -name))
-                                   :capabilities
-                                   :completionProvider
-                                   :triggerCharacters)]
-    (->> trigger-chars
-         (map re-escape)
-         (str/join "|")
-         re-pattern
-         (.split prefix)
-         last)))
-
-(defn- normalize-result [replace-range result]
+(defn- normalize-result [editor result]
   (let [to-insert (:insertText result (:label result))
         snippet? (-> result :insertTextFormat (= 2))
         common {:displayText (:label result)
                 :type (some-> result :kind dec types)
                 :description (:detail result)
-                :ranges [replace-range]}]
-    ; :replacementPrefix (normalize-prefix editor prefix)}]
+                :ranges [(get-range! editor to-insert)]}]
     (if snippet?
       (assoc common :snippet to-insert)
       (assoc common :text to-insert))))
@@ -81,14 +64,12 @@
 (defn- suggestions [^js data]
   (p/let [^js editor (.-editor data)
           {:keys [result]} (cmds/autocomplete editor)
-          prefix (get-prefix! editor)
-          replace-range (get-range! editor)
           items (if-let [items (:items result)]
                   items
                   result)
           comparator (fn [a b] (compare (:displayText a) (:displayText b)))
           autocomplete-items (into (sorted-set-by comparator)
-                                   (map #(normalize-result replace-range %))
+                                   (map #(normalize-result editor %))
                                    items)
           fuzzy-filtered (.. js/atom -ui -fuzzyMatcher
                              (setCandidates (->> autocomplete-items
