@@ -62,7 +62,6 @@
                                         :column (-> edit :range :end :character)})])
                  (assoc common :prefix (get-prefix editor possible-prefix-regex)))
         suggestion (cond-> common snippet? (assoc :snippet to-insert))]
-    (prn :S suggestion)
     (swap! cache assoc (key-fn suggestion) result)
     suggestion))
 
@@ -113,9 +112,7 @@
           editor (.. js/atom -workspace getActiveTextEditor)
           result (cmds/autocomplete-resolve editor original-message)]
     ; (prn :cache original-message)
-    (prn :RES result)
-    ; (prn :C (keys @cache) key)))
-    (prn :detailed (.-editor data) data)))
+    (prn :RES result)))
 
 (defn provider
   "Provider for autocomplete"
