@@ -35,41 +35,61 @@
    "builtin"
    "type"])
 
-(defn- get-range! [^js editor prefix]
+(defn- get-prefix [^js editor possible-prefix-regex]
   (let [^js cursor (-> editor .getCursors first)
-        first-word (first prefix)
-        buffer (.getBuffer editor)
-        word-ish-range (new Range
-                         (.getBeginningOfCurrentWordBufferPosition cursor #js {:wordRegex #"[^\s]*"})
-                         (.getBufferPosition cursor))
-        offset (. (.getTextInRange buffer word-ish-range) indexOf first-word)]
-    (when (not= -1 offset)
-      (set! (.-start word-ish-range) (.. word-ish-range -start (traverse #js {:column offset})))
-      word-ish-range)))
+        word-range (new Range
+                     (.getBeginningOfCurrentWordBufferPosition cursor #js {:wordRegex @possible-prefix-regex})
+                     (.getBufferPosition cursor))]
+    (.getTextInRange editor word-range)))
 
-(defn- re-escape [str]
-  (str/replace str #"[.*+?^${}()|\[\]\\]" "\\$&"))
+(def ^:private key-fn (juxt :text :type))
 
-(defn- normalize-result [editor result]
+(defn- normalize-result [^js editor cache possible-prefix-regex result]
   (let [to-insert (:insertText result (:label result))
         snippet? (-> result :insertTextFormat (= 2))
         common {:displayText (:label result)
                 :type (some-> result :kind dec types)
                 :description (:detail result)
-                :ranges [(get-range! editor to-insert)]}]
-    (if snippet?
-      (assoc common :snippet to-insert)
-      (assoc common :text to-insert))))
+                :text to-insert}
+        ;; FIXME - ranges is not really working for snippets...
+        common (if-let [edit nil #_(:textEdit result)]
+                 (assoc common
+                        :text (:newText edit)
+                        :ranges [(new Range
+                                   #js {:row (-> edit :range :start :line)
+                                        :column (-> edit :range :start :character)}
+                                   #js {:row (-> edit :range :end :line)
+                                        :column (-> edit :range :end :character)})])
+                 (assoc common :prefix (get-prefix editor possible-prefix-regex)))
+        suggestion (cond-> common snippet? (assoc :snippet to-insert))]
+    (prn :S suggestion)
+    (swap! cache assoc (key-fn suggestion) result)
+    suggestion))
 
-(defn- suggestions [^js data]
+(defn- re-escape [string]
+  (str/replace string #"[\|\\\{\}\(\)\[\]\^\$\+\*\?\.\-\/]" "\\$&"))
+
+(defn- get-possible-prefix-re [items]
+  (let [all-items (->> items
+                       (map :label)
+                       (str/join ""))
+        non-word-chars (distinct (re-seq #"[^\w]" all-items))]
+    (re-pattern (str "[\\w" (re-escape (str/join "" non-word-chars)) "]+"))))
+
+(defn- suggestions [^js data cache]
+  (reset! cache {})
   (p/let [^js editor (.-editor data)
           {:keys [result]} (cmds/autocomplete editor)
           items (if-let [items (:items result)]
                   items
                   result)
+          possible-prefix-regex (delay (get-possible-prefix-re items))
           comparator (fn [a b] (compare (:displayText a) (:displayText b)))
           autocomplete-items (into (sorted-set-by comparator)
-                                   (map #(normalize-result editor %))
+                                   (map #(normalize-result editor
+                                                           cache
+                                                           possible-prefix-regex
+                                                           %))
                                    items)
           fuzzy-filtered (.. js/atom -ui -fuzzyMatcher
                              (setCandidates (->> autocomplete-items
@@ -85,20 +105,32 @@
          (sort-by :score)
          clj->js)))
 
-(defn- detailed-suggestion [_data])
-  ; (prn :detailed data))
+(defn- detailed-suggestion [^js data cache]
+  #_
+  (p/let [selected (js->clj data :keywordize-keys true)
+          key (key-fn selected)
+          original-message (get @cache key)
+          editor (.. js/atom -workspace getActiveTextEditor)
+          result (cmds/autocomplete-resolve editor original-message)]
+    ; (prn :cache original-message)
+    (prn :RES result)
+    ; (prn :C (keys @cache) key)))
+    (prn :detailed (.-editor data) data)))
 
 (defn provider
   "Provider for autocomplete"
   []
-  #js {:selector ".source"
-       :disableForSelector ".source .comment"
-       :inclusionPriority 10
-       :excludeLowerPriority false
-       :suggestionPriority 20
-       :filterSuggestions false
+  (let [cache (atom {})]
+    #js {:selector ".source"
+         :disableForSelector ".source .comment"
+         :inclusionPriority 10
+         :excludeLowerPriority false
+         :suggestionPriority 20
+         :filterSuggestions false
 
-       :getSuggestions (fn [data]
-                         (suggestions data))
+         :getSuggestions (fn [data]
+                           (suggestions data cache))
 
-       :getSuggestionDetailsOnSelect #(detailed-suggestion %)})
+         :getSuggestionDetailsOnSelect #(detailed-suggestion % cache)}))
+         ; :onDidInsertSuggestion #(prn :ALMOST-THERE)
+         ; :dispose #(prn :I-AM-DONE)}))
