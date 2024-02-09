@@ -345,6 +345,12 @@
        (send-command! lang "textDocument/completion"
                       (position-from-editor editor))))))
 
+(defn autocomplete-resolve [^js editor completion-item]
+  (let [lang (.. editor getGrammar -name)]
+    (when (have-capability? lang :completionProvider)
+      (p/do!
+       (send-command! lang "completionItem/resolve" completion-item)))))
+
 (defn exec-command [lang command arguments]
   (send-command! lang
                  "workspace/executeCommand"
