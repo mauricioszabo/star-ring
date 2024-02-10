@@ -17,7 +17,7 @@
     },
     "autocomplete.provider": {
       "versions": {
-        "4.0.0": "complete_provider"
+        "5.0.0": "complete_provider"
       }
     },
     "intentions:list": {
@@ -50,7 +50,7 @@
   },
   "license": "MIT",
   "engines": {
-    "atom": ">=1.0.0 <2.0.0"
+    "atom": ">=1.111.2023121300 <2.0.0"
   },
   "devDependencies": {
     "shadow-cljs": "^2.20.1"
