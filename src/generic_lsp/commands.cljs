@@ -79,6 +79,32 @@
 (defn file->uri [file] (str (url/pathToFileURL file)))
 
 (declare open-document!)
+
+(def ^:private text-document-capabilities
+  {:synchronization {:didSave true}
+   :completion {:dynamicRegistration true
+                :contextSupport true
+                :completionItem {:snippetSupport true
+                                 :commitCharactersSupport true
+                                 :preselectSupport false
+
+                                 :documentationFormat ["markdown" "plaintext"]
+                                 :resolveSupport {:properties ["documentation" "detail" "additionalTextEdits"]}
+                                 :labelDetailsSupport true}}
+   :declaration {}
+   :formatting {}
+   :rangeFormatting {}
+   :definition {}
+   :codeAction {}
+   :typeDefinition {}
+   :hover {:contentFormat ["markdown" "plaintext"]}
+   :inlayHint {:dynamicRegistration true,
+               :resolveSupport {:properties ["tooltip",
+                                             "textEdits",
+                                             "label.tooltip",
+                                             "label.location",
+                                             "label.command"]}}})
+
 (defn- init-lsp [language server open-editors]
   (p/let [workpace-dirs (->> js/atom
                              .-project
@@ -91,19 +117,7 @@
                               {:processId nil
                                :clientInfo {:name "Pulsar"}
                                :locale "en"
-                               :capabilities {:textDocument {:synchronization {:didSave true}
-                                                             :completion {:contextSupport true
-                                                                          :completionItem {:snippetSupport true
-                                                                                           :commitCharactersSupport true
-                                                                                           :preselectSupport true
-                                                                                           :documentationFormat ["markdown" "plaintext"]
-                                                                                           :resolveSupport {:properties ["documentation" "detail" "additionalTextEdits"]}}}
-                                                             :declaration {}
-                                                             :formatting {}
-                                                             :rangeFormatting {}
-                                                             :definition {}
-                                                             :codeAction {}
-                                                             :typeDefinition {}}
+                               :capabilities {:textDocument text-document-capabilities
                                               :workspace {:workspaceEdit {:documentChanges true}}}
                                :rootUri (-> workpace-dirs first .-uri)
                                :workspaceFolders workpace-dirs})]

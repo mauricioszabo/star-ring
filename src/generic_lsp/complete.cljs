@@ -108,7 +108,10 @@
   #_
   (p/let [selected (js->clj data :keywordize-keys true)
           key (key-fn selected)
-          original-message (get @cache key)
+          original-message (-> @cache
+                               (get key)
+                               (assoc :insertTextFormat 1)
+                               (dissoc :score))
           editor (.. js/atom -workspace getActiveTextEditor)
           result (cmds/autocomplete-resolve editor original-message)]
     ; (prn :cache original-message)
