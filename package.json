@@ -1,13 +1,58 @@
 {
-  "name": "star-ring",
-  "description": "A collection of packages for Pulsar",
-  "keywords": [],
+  "name": "generic-lsp",
+  "main": "./index.js",
+  "version": "2024.02.10-04",
+  "description": "A generic LSP package for Atom/Pulsar",
+  "repository": "https://github.com/mauricioszabo/star-ring",
+  "keywords": ["lsp"],
+  "activationCommands": {
+    "atom-workspace": "generic-lsp:start-LSP-server",
+    "atom-text-editor": "generic-lsp:open-config-for-current-language"
+  },
+  "providedServices": {
+    "lsp.command": {
+      "versions": {
+        "0.1.0": "provider"
+      }
+    },
+    "autocomplete.provider": {
+      "versions": {
+        "5.0.0": "complete_provider"
+      }
+    },
+    "intentions:list": {
+      "versions": {
+        "1.0.0": "intentions_list"
+      }
+    },
+    "intentions:highlight": {
+      "versions": {
+        "2.0.0": "intentions_provide"
+      }
+    }
+  },
+  "consumedServices": {
+    "status-bar": {
+      "versions": {
+        "^1.0.0": "status_bar_consumer"
+      }
+    },
+    "datatip": {
+      "versions": {
+        "0.1.0": "datatip_consumer"
+      }
+    },
+    "linter-indie": {
+      "versions": {
+        "2.0.0": "linter_consumer"
+      }
+    }
+  },
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.111.2023121300 <2.0.0"
+  },
   "devDependencies": {
-    "@npmcli/arborist": "^6.2.7",
-    "atom-select-list": "^0.8.1",
-    "isomorphic-git": "^1.23.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "shadow-cljs": "^2.22.10"
+    "shadow-cljs": "^2.20.1"
   }
 }
