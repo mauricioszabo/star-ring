@@ -87,7 +87,6 @@
                 :completionItem {:snippetSupport true
                                  :commitCharactersSupport true
                                  :preselectSupport false
-
                                  :documentationFormat ["markdown" "plaintext"]
                                  :resolveSupport {:properties ["documentation" "detail" "additionalTextEdits"]}
                                  :labelDetailsSupport true}}
