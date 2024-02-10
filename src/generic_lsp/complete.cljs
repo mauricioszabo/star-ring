@@ -49,7 +49,8 @@
         snippet? (-> result :insertTextFormat (= 2))
         common {:displayText (:label result)
                 :type (some-> result :kind dec types)
-                :description (:detail result)
+                :description (get-in result [:documentation :value]
+                                     (:documentation result (:detail result)))
                 :text to-insert}
         ;; FIXME - ranges is not really working for snippets...
         common (if-let [edit nil #_(:textEdit result)]
@@ -104,8 +105,8 @@
          (sort-by :score)
          clj->js)))
 
+; deta
 (defn- detailed-suggestion [^js data cache]
-  #_
   (p/let [selected (js->clj data :keywordize-keys true)
           key (key-fn selected)
           original-message (-> @cache
@@ -113,9 +114,13 @@
                                (assoc :insertTextFormat 1)
                                (dissoc :score))
           editor (.. js/atom -workspace getActiveTextEditor)
-          result (cmds/autocomplete-resolve editor original-message)]
-    ; (prn :cache original-message)
-    (prn :RES result)))
+          {:keys [result]} (cmds/autocomplete-resolve editor original-message)
+          final-result (when result
+                         (normalize-result editor
+                                           cache
+                                           (delay (get-possible-prefix-re [result]))
+                                           result))]
+    (some-> final-result clj->js)))
 
 (defn provider
   "Provider for autocomplete"
